@@ -12,9 +12,30 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+  int _counter2 = 1;
+
   void _incrementCounter() {
     setState(() {
       _counter++;
+    });
+  }
+
+  void _decrementCounter() {
+    setState(() {
+      _counter--;
+    });
+  }
+
+  void _twiceCounter() {
+    setState(() {
+      _counter2 *= 2;
+    });
+  }
+
+  void _clearCounter() {
+    setState(() {
+      _counter = 0;
+      _counter2 = 1;
     });
   }
 
@@ -29,30 +50,67 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'You have pushed the button this many times:',
+              '足す or 引く',
             ),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headline4,
             ),
-            SizedBox(
-              height: 400,
-              child: GridView.count(crossAxisCount: 3, children: [
-                for (var i = 0; i < 9; i++)
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: ColoredBox(color: Colors.amber),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                TextButton(
+                  onPressed: _incrementCounter,
+                  child: const Text(
+                    'プラス',
+                    style: TextStyle(color: Colors.white),
                   ),
-              ]),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.blue),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _decrementCounter,
+                  child: const Text(
+                    'マイナス',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.red),
+                  ),
+                ),
+              ],
+            ),
+            const Text(
+              '2倍されていく',
+            ),
+            Text(
+              '$_counter2',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            TextButton(
+              onPressed: _twiceCounter,
+              child: const Text(
+                '2倍',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.green),
+              ),
+            ),
+            TextButton(
+              onPressed: _clearCounter,
+              child: const Text(
+                'クリア',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.grey),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
