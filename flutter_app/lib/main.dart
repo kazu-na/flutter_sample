@@ -4,6 +4,7 @@ import 'package:flutter_app/my_home_page.dart';
 import 'package:flutter_app/second_page.dart';
 import 'package:flutter_app/text_field_page.dart';
 import 'package:flutter_app/user_list_page.dart';
+import 'package:flutter_app/wordle_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,7 +23,8 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: <String, WidgetBuilder>{
-        '/': (BuildContext context) => const UserListPage(),
+        '/': (BuildContext context) => const WordlePage(),
+        // '/': (BuildContext context) => const UserListPage(),
         // '/': (BuildContext context) => const FirstPage(),
         // '/second': (BuildContext context) => const SecondPage(),
       },
