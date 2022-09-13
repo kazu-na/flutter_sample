@@ -18,6 +18,19 @@ class WordlePage extends StatelessWidget {
   }
 }
 
+// 回答結果クラス
+class AnswerResult {
+  final String char; // 文字
+  final String judge; // 合ってるのか間違ってるのかなどの結果
+  final int position; // 何文字目か
+
+  const AnswerResult({
+    required this.char,
+    required this.judge,
+    required this.position,
+  });
+}
+
 // 接続先
 final _link = HttpLink(
   "http://serene-garden-89220.herokuapp.com/query",
@@ -51,8 +64,17 @@ class _WordleState extends State<Wordle> {
   // 回答ワード
   String _answerWord = '';
 
-  // 回答チェック
+  // 挑戦回数ごとの回答チェック
   List _checkAnswerWords = [];
+
+  // 挑戦回数
+  int _challengeCount = 1;
+
+  // 判定
+  final String JUDGE_CORRECT = 'CORRECT';
+  final String JUDGE_EXISTING = 'EXISTING';
+  final String JUDGE_NOTHING = 'NOTHING';
+  final String NO_ANSWER = 'NO_ANSWER';
 
   void _generateWordId() {
     wordId = _uuid.v4();
@@ -70,10 +92,39 @@ class _WordleState extends State<Wordle> {
     });
   }
 
-  void _setCheckAnswer(value) {
+  void _setCheckAnswer(chars) {
     setState(() {
-      _checkAnswerWords = value;
+      _checkAnswerWords[_challengeCount - 1] = chars;
     });
+  }
+
+  void _refreshAnswer() {
+    setState(() {
+      _checkAnswerWords = [];
+    });
+  }
+
+  void _incrementCounter() {
+    setState(() {
+      _challengeCount++;
+    });
+  }
+
+  // 解答欄の初期化
+  void initAnswerState() {
+    List<AnswerResult> _chars = List.generate(4, (i) {
+      return AnswerResult(
+        char: '',
+        judge: NO_ANSWER,
+        position: i,
+      );
+    });
+    // 挑戦回数は5回まで
+    for (var i = 0; i < 5; i++) {
+      setState(() {
+        _checkAnswerWords.add(_chars);
+      });
+    }
   }
 
   // 正解ワード取得
@@ -157,11 +208,16 @@ class _WordleState extends State<Wordle> {
 
     final data = result.data;
     if (data != null) {
-      final answerResult = data['action'];
-      _setCheckAnswer(answerResult['chars']);
-      // _checkAnswerWords.forEach((word) {
-      //   print(word['char']);
-      // });
+      final answerResult = data['action']['chars'];
+      List<AnswerResult> _chars = List.generate(answerResult.length, (int i) {
+        return AnswerResult(
+          char: answerResult[i]['char'],
+          judge: answerResult[i]['judge'],
+          position: answerResult[i]['position'],
+        );
+      });
+      _setCheckAnswer(_chars);
+      _incrementCounter();
     }
 
     loading = false;
@@ -173,6 +229,7 @@ class _WordleState extends State<Wordle> {
   @override
   void initState() {
     getCorrectWord();
+    initAnswerState();
   }
 
   @override
@@ -187,19 +244,6 @@ class _WordleState extends State<Wordle> {
               style: TextStyle(color: Colors.blue),
             ),
           ],
-          TextButton(
-            onPressed: () {
-              getCorrectWord();
-            },
-            child: Text(
-              '送信',
-              style: TextStyle(color: Colors.white),
-            ),
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(Colors.blue),
-            ),
-          ),
-          Text(correctWord['word'] == null ? '' : correctWord['word']),
           TextField(
             onChanged: (value) => _setAnswerWord(value),
           ),
@@ -209,7 +253,9 @@ class _WordleState extends State<Wordle> {
             }),
             child: const Text(
               '回答する',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Colors.white,
+              ),
             ),
             style: ButtonStyle(
               backgroundColor: MaterialStateProperty.all(Colors.blue),
@@ -217,27 +263,53 @@ class _WordleState extends State<Wordle> {
           ),
           // 回答結果表示
           if (_checkAnswerWords.isNotEmpty) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                for (Map word in _checkAnswerWords)
-                  Column(
-                    children: [
-                      Text(
-                        word['char'],
-                        style: const TextStyle(
-                          fontSize: 70,
-                        ),
-                      ),
-                      Text(
-                        word['judge'],
-                      )
-                    ],
-                  ),
-              ],
-            )
-          ]
+            SizedBox(
+              height: 600,
+              child: GridView.count(crossAxisCount: 4, children: [
+                for (List answers in _checkAnswerWords)
+                  for (AnswerResult chars in answers)
+                    // for (Map word in chars)
+                    Column(
+                      children: [
+                        _answerCheck(chars),
+                      ],
+                    ),
+              ]),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _answerCheck(AnswerResult chars) {
+    // 判定色
+    Color color = Colors.transparent;
+    if (chars.judge == JUDGE_CORRECT) {
+      color = Colors.blue;
+    } else if (chars.judge == JUDGE_EXISTING) {
+      color = Colors.yellow;
+    } else if (chars.judge == JUDGE_NOTHING) {
+      color = Colors.grey;
+    } else {
+      color = Colors.white;
+    }
+
+    return Container(
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
+        color: color,
+        border: Border.all(color: Colors.blue),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        chars.char,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 70,
+          color: Colors.white,
+        ),
       ),
     );
   }
