@@ -250,6 +250,11 @@ class _WordleState extends State<Wordle> {
           TextButton(
             onPressed: (() {
               checkAnswerWord();
+
+              // 5回挑戦後、正解を表示
+              if (_challengeCount == 5) {
+                _correctAnswerDialog(correctWord['word'], correctWord['mean']);
+              }
             }),
             child: const Text(
               '回答する',
@@ -310,6 +315,29 @@ class _WordleState extends State<Wordle> {
           fontSize: 70,
           color: Colors.white,
         ),
+      ),
+    );
+  }
+
+  Future<void> _correctAnswerDialog(String word, String mean) {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('答え'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Text('単語 : $word'),
+              Text('意味 : $mean'),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'OK'),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
