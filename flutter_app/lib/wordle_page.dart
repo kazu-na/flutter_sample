@@ -1,8 +1,7 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:graphql/client.dart';
 import 'package:uuid/uuid.dart';
+import 'package:keyboard_actions/keyboard_actions.dart';
 
 class WordlePage extends StatelessWidget {
   const WordlePage({Key? key}) : super(key: key);
@@ -10,6 +9,7 @@ class WordlePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text('Wordle'),
       ),
@@ -57,6 +57,8 @@ class _WordleState extends State<Wordle> {
 
   final Uuid _uuid = Uuid();
   String wordId = '';
+
+  final FocusNode _nodeText1 = FocusNode();
 
   // 正解ワード
   Map correctWord = {};
@@ -129,8 +131,6 @@ class _WordleState extends State<Wordle> {
 
   // 正解ワード取得
   void getCorrectWord() async {
-    print('getCorrectWord start');
-
     loading = true;
 
     // 既に正解wordを発行していたら処理をしない
@@ -164,18 +164,13 @@ class _WordleState extends State<Wordle> {
     final data = result.data;
     if (data != null) {
       _setCorrectWord(data['correctWord']);
-      print(correctWord['word']);
     }
 
     loading = false;
-
-    print('getCorrectWord end');
   }
 
   // 回答ワードチェック
   void checkAnswerWord() async {
-    print('checkAnswerWord start');
-
     loading = true;
 
     const String answerWord = r'''
@@ -221,8 +216,6 @@ class _WordleState extends State<Wordle> {
     }
 
     loading = false;
-
-    print('checkAnswerWord end');
   }
 
   // 初期処理
@@ -230,6 +223,43 @@ class _WordleState extends State<Wordle> {
   void initState() {
     getCorrectWord();
     initAnswerState();
+  }
+
+  // キーボードコンフィグ
+  KeyboardActionsConfig _buildConfig(BuildContext context) {
+    return KeyboardActionsConfig(
+      keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
+      keyboardBarColor: Colors.black,
+      nextFocus: false,
+      actions: [
+        KeyboardActionsItem(
+          focusNode: _nodeText1,
+          toolbarAlignment: MainAxisAlignment.start,
+          displayArrows: false,
+          toolbarButtons: [
+            (node) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Stack(
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(left: 330),
+                      child: GestureDetector(
+                        onTap: () => node.unfocus(),
+                        child: Text(
+                          "完了",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -244,8 +274,34 @@ class _WordleState extends State<Wordle> {
               style: TextStyle(color: Colors.blue),
             ),
           ],
-          TextField(
-            onChanged: (value) => _setAnswerWord(value),
+          // キーボード入力
+          Container(
+            height: 70,
+            child: KeyboardActions(
+              config: _buildConfig(context),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      TextField(
+                        onChanged: ((value) {
+                          _setAnswerWord(value);
+                        }),
+                        maxLength: 4,
+                        keyboardType: TextInputType.text,
+                        focusNode: _nodeText1,
+                        decoration: InputDecoration(
+                          hintText: "4文字の英単語を入力",
+                          counterText: '',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
           TextButton(
             onPressed: (() {
@@ -267,21 +323,19 @@ class _WordleState extends State<Wordle> {
             ),
           ),
           // 回答結果表示
-          if (_checkAnswerWords.isNotEmpty) ...[
-            SizedBox(
-              height: 600,
-              child: GridView.count(crossAxisCount: 4, children: [
-                for (List answers in _checkAnswerWords)
-                  for (AnswerResult chars in answers)
-                    // for (Map word in chars)
-                    Column(
-                      children: [
-                        _answerCheck(chars),
-                      ],
-                    ),
-              ]),
-            ),
-          ],
+          SizedBox(
+            height: 550,
+            child: GridView.count(crossAxisCount: 4, children: [
+              for (List answers in _checkAnswerWords)
+                for (AnswerResult chars in answers)
+                  // for (Map word in chars)
+                  Column(
+                    children: [
+                      _answerCheck(chars),
+                    ],
+                  ),
+            ]),
+          ),
         ],
       ),
     );
